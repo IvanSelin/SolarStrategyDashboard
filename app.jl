@@ -65,7 +65,7 @@ end
     @out max_track_index = 1
     @out track_files = readdir(joinpath(FILE_PATH, TRACK_DIR))
     @out weather_files = readdir(joinpath(FILE_PATH, WEATHER_DIR))
-    @out track_trace = [scatter(
+    @out track_traces = [scatter(
         type="scattermapbox",
         text=[ 10, 5 ],
         lon=[ -90.1744208, -90.9007405 ],
@@ -109,6 +109,11 @@ end
     @private result = 0.0
     @private track_df = DataFrame()
     @private segments_df = DataFrame()
+    # @private weather_coeff = Matrix{Float64}
+    # @private weather_coeff = Array{Float64,2}
+    # @private edges_lat = Vector{Float64}
+    # @private edges_lon = Vector{Float64}
+    @private weather_density_df = DataFrame(lat=Float64[], lon=Float64[], z=Float64[])
     # @private segments_df
 
     # watch a variable and execute a block of code when
@@ -134,69 +139,69 @@ end
         calculation_progress = 100
         is_calculating = false
     end
-    
-    @onchange start_index begin
-        # index_out = "sample text "*string(start_index)
+   
+    # @onchange start_index begin
+    #     # index_out = "sample text "*string(start_index)
 
-        before_df = track_df[1:start_index, :]
-        after_df = track_df[start_index:end,:]
+    #     before_df = track_df[1:start_index, :]
+    #     after_df = track_df[start_index:end,:]
 
-        lats_after = after_df.latitude
-        lons_after = after_df.longitude
+    #     lats_after = after_df.latitude
+    #     lons_after = after_df.longitude
 
-        lats_before = before_df.latitude
-        lons_before = before_df.longitude
+    #     lats_before = before_df.latitude
+    #     lons_before = before_df.longitude
 
-        trace_after = scatter(
-            type="scattermapbox",
-            lon=lons_after,
-            lat=lats_after,
-            marker_color="red",
-            line_color="red",
-            marker_size=4,
-            mode="lines+markers",
-            name="prediction"
-        )
-        trace_before = scatter(
-            type="scattermapbox",
-            lon=lons_before,
-            lat=lats_before,
-            marker_color="green",
-            line_color="green",
-            marker_size=4,
-            mode="lines+markers",
-            name="passed"
-        )
+    #     trace_after = scatter(
+    #         type="scattermapbox",
+    #         lon=lons_after,
+    #         lat=lats_after,
+    #         marker_color="red",
+    #         line_color="red",
+    #         marker_size=4,
+    #         mode="lines+markers",
+    #         name="prediction"
+    #     )
+    #     trace_before = scatter(
+    #         type="scattermapbox",
+    #         lon=lons_before,
+    #         lat=lats_before,
+    #         marker_color="green",
+    #         line_color="green",
+    #         marker_size=4,
+    #         mode="lines+markers",
+    #         name="passed"
+    #     )
 
 
-        # lats = [30., 30.]
-        # lons = [-100., -101.]
-        # track_trace = [scatter(
-        #     type="scattermapbox",
-        #     text=[ "1", "2" ],
-        #     lon=lons,
-        #     lat=lats,
-        #     marker_color="fuchsia",
-        #     marker_size=4
-        # )]
+    #     # lats = [30., 30.]
+    #     # lons = [-100., -101.]
+    #     # track_trace = [scatter(
+    #     #     type="scattermapbox",
+    #     #     text=[ "1", "2" ],
+    #     #     lon=lons,
+    #     #     lat=lats,
+    #     #     marker_color="fuchsia",
+    #     #     marker_size=4
+    #     # )]
 
-        track_trace = [trace_before, trace_after]
-        track_layout = PlotlyBase.Layout(
-            dragmode="zoom",
-            mapbox_style="open-street-map",
-            mapbox_center_lat=mean(track_df.latitude),
-            mapbox_center_lon=mean(track_df.longitude),
-            # mapbox_zoom=2,
-            autosize=true,
-            height=300,
-            margin_l=0,
-            margin_r=0,
-            margin_t=0,
-            margin_b=0,
-            legend_title_side="top",
-            legend_orientation="h"
-        )
-    end
+    #     track_trace = [trace_before, trace_after]
+    #     track_layout = PlotlyBase.Layout(
+    #         dragmode="zoom",
+    #         mapbox_style="open-street-map",
+    #         mapbox_center_lat=mean(track_df.latitude),
+    #         mapbox_center_lon=mean(track_df.longitude),
+    #         # mapbox_zoom=2,
+    #         autosize=true,
+    #         height=300,
+    #         margin_l=0,
+    #         margin_r=0,
+    #         margin_t=0,
+    #         margin_b=0,
+    #         legend_title_side="top",
+    #         legend_orientation="h"
+    #     )
+    # end
 
     @onchange start_datetime begin
         
@@ -231,9 +236,9 @@ end
     #     )
     # end
 
-    function get_map_traces(split_index)
-        before_df = track_df[1:split_index, :]
-        after_df = track_df[split_index:end,:]
+    function get_map_traces(track_data, split_index, weather_df)
+        before_df = track_data[1:split_index, :]
+        after_df = track_data[split_index:end,:]
 
         lats_before = before_df.latitude
         lons_before = before_df.longitude
@@ -262,9 +267,14 @@ end
             mode="lines+markers",
             name="prediction"
         )
+
+        weather_trace = densitymapbox(
+            lat=weather_df.lat,
+            lon=weather_df.lon,
+            z=weather_df.z,
+            opacity=0.5
+        )
         
-
-
         # lats = [30., 30.]
         # lons = [-100., -101.]
         # track_trace = [scatter(
@@ -276,14 +286,17 @@ end
         #     marker_size=4
         # )]
 
-        track_traces = [trace_before, trace_after]
-        track_layout = PlotlyBase.Layout(
+        traces = [trace_before, trace_after, weather_trace]
+        # track_traces = [trace_before, trace_after]
+        layout = PlotlyBase.Layout(
+            geo_fitbounds="locations",
+			# autosize=true,
             dragmode="zoom",
             mapbox_style="open-street-map",
-            mapbox_center_lat=mean(track_df.latitude),
-            mapbox_center_lon=mean(track_df.longitude),
-            # mapbox_zoom=3,
-            autosize=true,
+            mapbox_center_lat=mean(track_data.latitude),
+            mapbox_center_lon=mean(track_data.longitude),
+            mapbox_zoom=3,
+            # autosize=true,
             height=300,
             margin_l=0,
             margin_r=0,
@@ -293,9 +306,25 @@ end
             legend_orientation="h"
         )
 
-        return track_traces, track_layout
+        # track_layout = PlotlyBase.Layout(
+        #     dragmode="zoom",
+        #     mapbox_style="open-street-map",
+        #     mapbox_center_lat=mean(track_df.latitude),
+        #     mapbox_center_lon=mean(track_df.longitude),
+        #     mapbox_zoom=3,
+        #     height=300,
+        #     margin_l=0,
+        #     margin_r=0,
+        #     margin_t=0,
+        #     margin_b=0
+        # )
+
+        return traces, layout
     end
 
+    @onchange start_index begin
+        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+    end
 
     @onchange selected_weather begin
 
@@ -305,74 +334,91 @@ end
         # у нас есть 3 источника (возможно потом и 4), через которые обновляются данные карты
         # а код обновления карты везде должен дёргаться один и тот же
         # НО есть проблема: внутри обычных функций @out переменные не меняются
-        # лучше всего сделать функцию, которой передава
+        # лучше всего сделать функцию, которой передавать параметры и чтобы внутри неё всё менялось
+        # если что, пусть возвращает несколько значений
+
+        println(selected_weather)
+        weather_coeff, edges_lat, edges_lon = read_weather_json(joinpath(FILE_PATH, WEATHER_DIR, selected_weather))
+
+        weather_density_df = generate_density_data(weather_coeff, edges_lat, edges_lon)
+
+        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
         
     end
 
     @onchange selected_track begin
-        println(typeof(selected_track))
         println(selected_track)
         track_df, segments_df = get_track_and_segments(joinpath(FILE_PATH, TRACK_DIR, selected_track))
         max_track_index = size(segments_df,1)
+        # println(track_df)
         start_index = min(start_index, max_track_index)
-
-        before_df = track_df[1:start_index, :]
-        after_df = track_df[start_index:end,:]
-
-        lats_after = after_df.latitude
-        lons_after = after_df.longitude
-
-        lats_before = before_df.latitude
-        lons_before = before_df.longitude
-
-        trace_after = scatter(
-            type="scattermapbox",
-            lon=lons_after,
-            lat=lats_after,
-            marker_color="red",
-            line_color="red",
-            marker_size=4,
-            mode="lines+markers",
-            name="prediction"
-        )
-        trace_before = scatter(
-            type="scattermapbox",
-            lon=lons_before,
-            lat=lats_before,
-            marker_color="green",
-            line_color="green",
-            marker_size=4,
-            mode="lines+markers",
-            name="passed"
-        )
-
-
-        # lats = [30., 30.]
-        # lons = [-100., -101.]
-        # track_trace = [scatter(
-        #     type="scattermapbox",
-        #     text=[ "1", "2" ],
-        #     lon=lons,
-        #     lat=lats,
-        #     marker_color="fuchsia",
-        #     marker_size=4
-        # )]
-
-        track_trace = [trace_before, trace_after]
-        track_layout = PlotlyBase.Layout(
-            dragmode="zoom",
-            mapbox_style="open-street-map",
-            mapbox_center_lat=mean(track_df.latitude),
-            mapbox_center_lon=mean(track_df.longitude),
-            mapbox_zoom=3,
-            height=300,
-            margin_l=0,
-            margin_r=0,
-            margin_t=0,
-            margin_b=0
-        )
-        
+        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
     end
+
+    # @onchange selected_track begin
+    #     # println(typeof(selected_track))
+    #     println(selected_track)
+    #     track_df, segments_df = get_track_and_segments(joinpath(FILE_PATH, TRACK_DIR, selected_track))
+    #     max_track_index = size(segments_df,1)
+    #     start_index = min(start_index, max_track_index)
+
+    #     before_df = track_df[1:start_index, :]
+    #     after_df = track_df[start_index:end,:]
+
+    #     lats_after = after_df.latitude
+    #     lons_after = after_df.longitude
+
+    #     lats_before = before_df.latitude
+    #     lons_before = before_df.longitude
+
+    #     trace_after = scatter(
+    #         type="scattermapbox",
+    #         lon=lons_after,
+    #         lat=lats_after,
+    #         marker_color="red",
+    #         line_color="red",
+    #         marker_size=4,
+    #         mode="lines+markers",
+    #         name="prediction"
+    #     )
+    #     trace_before = scatter(
+    #         type="scattermapbox",
+    #         lon=lons_before,
+    #         lat=lats_before,
+    #         marker_color="green",
+    #         line_color="green",
+    #         marker_size=4,
+    #         mode="lines+markers",
+    #         name="passed"
+    #     )
+
+
+    #     # lats = [30., 30.]
+    #     # lons = [-100., -101.]
+    #     # track_trace = [scatter(
+    #     #     type="scattermapbox",
+    #     #     text=[ "1", "2" ],
+    #     #     lon=lons,
+    #     #     lat=lats,
+    #     #     marker_color="fuchsia",
+    #     #     marker_size=4
+    #     # )]
+
+    #     track_trace = [trace_before, trace_after]
+    #     track_layout = PlotlyBase.Layout(
+    #         dragmode="zoom",
+    #         mapbox_style="open-street-map",
+    #         mapbox_center_lat=mean(track_df.latitude),
+    #         mapbox_center_lon=mean(track_df.longitude),
+    #         mapbox_zoom=3,
+    #         height=300,
+    #         margin_l=0,
+    #         margin_r=0,
+    #         margin_t=0,
+    #         margin_b=0
+    #     )
+        
+    # end
 
     route("/track", method = POST) do
         files = Genie.Requests.filespayload()
