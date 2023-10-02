@@ -18,6 +18,7 @@ Genie.config.cors_headers["Access-Control-Allow-Origin"]  =  "*"
 Genie.config.cors_headers["Access-Control-Allow-Headers"] = "Content-Type"
 Genie.config.cors_headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
 Genie.config.cors_allowed_origins = ["*"]
+Genie.config.server_port = 9101
 
 const FILE_PATH = "upload"
 const TRACK_DIR = "track"
