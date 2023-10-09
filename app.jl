@@ -88,10 +88,12 @@ end
         height=250,
         margin_l=0,
         margin_r=0,
-        margin_t=0,
+        # margin_t=0,
         margin_b=0,
-        margin_pad=0
-        # title_text="Track altitude (distance)"
+        # margin_pad=0
+        title_text="Track altitude (distance)",
+        xaxis_title_text="Distance (m)",
+        yaxis_title_text="Altitude (m)"
     )
 
     @out speeds_traces = [
@@ -104,9 +106,12 @@ end
         height=250,
         margin_l=0,
         margin_r=0,
-        margin_t=0,
+        # margin_t=0,
         margin_b=0,
-        margin_pad=0
+        margin_pad=0,
+        title_text="Speed (distance)",
+        xaxis_title_text="Distance (m)",
+        yaxis_title_text="Speed (km/h)"
     )
 
     @out energies_traces = [
@@ -121,10 +126,13 @@ end
         height=250,
         margin_l=0,
         margin_r=0,
-        margin_t=0,
+        # margin_t=0,
         margin_b=0,
         margin_pad=0,
-        showlegend=false
+        showlegend=false,
+        title_text="Energy (distance)",
+        xaxis_title_text="Distance (m)",
+        yaxis_title_text="Energy (Wt*h)"
     )
 
     # @private defines a non-reactive variable
@@ -207,17 +215,6 @@ end
             )
         ]
 
-
-        my_msg = "it's working"
-        # is_calculating = true
-        calculation_progress = 0
-        # calcFunction()
-        sleep(0.5)
-        calculation_progress = 50
-        sleep(0.5)
-        calculation_progress = 90
-        sleep(0.2)
-        calculation_progress = 100
         @info "Finishing calculation"
         is_calculating = false
     end
