@@ -6,6 +6,7 @@ using Dates
 using PlotlyBase
 using Statistics
 using DataFrames
+using Logging
 # using StippleUI
 include("lib\\solar_loader.jl")
 @genietools
@@ -33,6 +34,7 @@ end
 # add reactive code to make the UI interactive
 @app begin
     # reactive variables are tagged with @in and @out
+    @private datetime_format = "YYYY-mm-dd HH:MM:SS"
     @in N = 0
     @in route_file = ""
     @in weather_file = ""
@@ -59,6 +61,7 @@ end
         marker_color="fuchsia",
         marker_size=4
       )]
+    @out calculation_alert = false
 
     @out track_layout = PlotlyBase.Layout(
             dragmode="zoom",
@@ -73,6 +76,57 @@ end
             margin_t=0,
             margin_b=0
     )
+    @out track_altitude_traces = [
+        scatter(
+            x=[2,3,4,5],
+            y=[16,5,11,9],
+            mode="lines",
+            type="scatter"
+        )
+    ]
+    @out track_altitude_layout = PlotlyBase.Layout(
+        height=250,
+        margin_l=0,
+        margin_r=0,
+        margin_t=0,
+        margin_b=0,
+        margin_pad=0
+        # title_text="Track altitude (distance)"
+    )
+
+    @out speeds_traces = [
+        bar(
+            x= ["giraffes", "orangutans", "monkeys"],
+            y=[20, 14, 23]
+        )
+    ]
+    @out speeds_layout = PlotlyBase.Layout(
+        height=250,
+        margin_l=0,
+        margin_r=0,
+        margin_t=0,
+        margin_b=0,
+        margin_pad=0
+    )
+
+    @out energies_traces = [
+        scatter(
+            x=[2,3,4,5],
+            y=[16,5,11,9],
+            mode="lines",
+            type="scatter"
+        )
+    ]
+    @out energies_layout = PlotlyBase.Layout(
+        height=250,
+        margin_l=0,
+        margin_r=0,
+        margin_t=0,
+        margin_b=0,
+        margin_pad=0,
+        showlegend=false
+    )
+
     # @private defines a non-reactive variable
     @private result = 0.0
     @private track_df = DataFrame()
@@ -82,6 +136,7 @@ end
     # @private edges_lat = Vector{Float64}
     # @private edges_lon = Vector{Float64}
     @private weather_density_df = DataFrame(lat=Float64[], lon=Float64[], z=Float64[])
+    # @private weather_weights = Vector{Float64}
     # @private segments_df
 
     # watch a variable and execute a block of code when
@@ -94,9 +149,67 @@ end
     end
 
     @onchange calculating begin
+        # if route_file == "" || weather_file == ""
+        #     calculation_alert = true
+        # end
         # calculating = true
-        my_msg = "it's working"
         is_calculating = true
+
+        @info "Starting calculation"
+
+        results = iterative_optimization(
+            track_df,
+            segments_df,
+            5,
+            5,
+            5100.,
+            DateTime(start_datetime, datetime_format)
+        )
+
+        final_result = last(results).solution
+        speeds = final_result.speeds
+        energies = final_result.energies
+
+        # speeds_traces = [
+        #     bar(
+        #         x=get_mean_data(track_df.distance),
+        #         y=speeds,
+        #         width=segments_df.diff_distance
+        #     )
+        # ]
+
+        speeds_traces = [
+            scatter(
+                x=get_mean_data(track_df.distance),
+                y=speeds,
+                mode="lines",
+                type="scatter",
+            )
+        ]
+
+        red_y_data = fill(0., size(track_df.distance,1))
+
+        energies_traces = [
+            scatter(
+                x=track_df.distance,
+                y=energies,
+                mode="lines",
+                type="scatter",
+                line_width="2"
+            ),
+            scatter(
+                x=track_df.distance,
+                y=red_y_data,
+                mode="lines",
+                type="scatter",
+                line_width="4",
+                line_color="red"
+            )
+        ]
+
+
+        my_msg = "it's working"
+        # is_calculating = true
         calculation_progress = 0
         # calcFunction()
         sleep(0.5)
@@ -105,6 +218,7 @@ end
         calculation_progress = 90
         sleep(0.2)
         calculation_progress = 100
+        @info "Finishing calculation"
         is_calculating = false
     end
 
@@ -207,6 +321,14 @@ end
 
         weather_density_df = generate_density_data(weather_coeff, edges_lat, edges_lon)
 
+        weather_weights = calculate_weather_weights_for_segments(
+            weather_coeff,
+            edges_lat,
+            edges_lon,
+            segments_df
+        )
+        segments_df.weather_coeff = weather_weights
+
         track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
         
     end
@@ -214,6 +336,15 @@ end
     @onchange selected_track begin
         println(selected_track)
         track_df, segments_df = get_track_and_segments(joinpath(FILE_PATH, TRACK_DIR, selected_track))
+
+        track_altitude_traces = [
+            scatter(
+                x=track_df.distance,
+                y=track_df.altitude,
+                mode="lines",
+                type="scatter"
+            )
+        ]
         max_track_index = size(segments_df,1)
         # println(track_df)
         start_index = min(start_index, max_track_index)
@@ -265,5 +396,8 @@ meta = Dict(
 layout = DEFAULT_LAYOUT(meta = meta)
 @page("/", "app.jl.html", layout)
 @page("/code", ui)
+
+# debug_logger = ConsoleLogger(stderr, Logging.Debug)
+# global_logger(debug_logger)
 
 end

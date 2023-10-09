@@ -1,9 +1,3 @@
-<!-- <h4>Hello Solar strategy! </h4> -->
-<!-- <p> Generated {{N}} random numbers. </p>
-<p v-text="msg"></p>
-<q-slider v-model="N" label="true">slider text</q-slider> -->
-<!-- <p>This is the default view for the application.</p> -->
-<!-- <p>You can change this view by editing the file <code>app.jl.html</code>.</p> -->
 <style>
   .stipple-core .container > .row > .st-col > .row:not(:first-child),
   .stipple-core .st-dashboard > .row > .st-col > .row:not(:first-child) {
@@ -15,68 +9,13 @@
       <div>
         <h1>Inputs</h1>
       </div>
-        <!-- <hr/> -->
-        <!-- <p> -->
 
           <!-- <h3>Specify route and weather data</h3> -->
           <q-select v-model="selected_track" :options="track_files" label="Select track" emit-value/>
           <q-select v-model="selected_weather" :options="weather_files" label="Select weather" />
           <br/>
-          <!-- <plotly :data="[{
-            type: 'scattermapbox',
-            text: [ 10, 5 ],
-            lon: [ -90.1744208, -90.9007405 ],
-            lat: [ 38.0032799, 38.0021822 ],
-            marker: { color: 'fuchsia', size: 4 }
-          }]" :layout="{
-            dragmode: 'zoom',
-            mapbox: { style: 'open-street-map', center: { lat: 38, lon: -90 }, zoom: 3 },
-            width: 400,
-            height: 300,
-            margin: {l: 0, r: 0, b: 0, t: 0, pad: 0}
-          }"></plotly> -->
+
           <plotly :data="track_traces" :layout="track_layout" style="max-width: inherit;"></plotly>
-          <!-- <q-file filled outlined bottom-slots v-model="route_file" label="Select track data" counter max-files="1" accept=".csv">
-            <template v-slot:before>
-              <q-icon name="attachment" />
-            </template>
-    
-            <template v-slot:append>
-              <q-icon v-if="model !== null" name="close" @click.stop.prevent="model = null" class="cursor-pointer" />
-            </template>
-
-            <template v-slot:after >
-              <q-btn
-                color="primary"
-                dense
-                icon="cloud_upload"
-                @click="upload"
-                :disable="!canUpload"
-                :loading="isUploading"
-              />
-            </template>
-          </q-file> -->
-
-          <!-- <q-file filled outlined bottom-slots v-model="weather_file" label="Select weather data" counter max-files="1" accept=".csv">
-            <template v-slot:before>
-              <q-icon name="attachment" />
-            </template>
-    
-            <template v-slot:append>
-              <q-icon v-if="model !== null" name="close" @click.stop.prevent="model = null" class="cursor-pointer" />
-            </template>
-    
-            <template v-slot:after >
-              <q-btn
-                color="primary"
-                dense
-                icon="cloud_upload"
-                @click="upload"
-                :disable="!canUpload"
-                :loading="isUploading"
-              />
-            </template>
-          </q-file> -->
 
           <!-- <h3>Select starting point</h3> -->
           <div class="q-pa-md">
@@ -87,11 +26,6 @@
           </div>
 
           <h3>Select start datetime</h3>
-          <!-- <div class="q-pa-md">
-            <q-badge color="secondary">
-              Selected date: {{ start_datetime }}
-            </q-badge>
-          </div> -->
           <div>
             <!-- <q-date v-model="start_datetime" mask="YYYY-MM-DD HH:mm" color="purple" title="Date" now-btn :dense="true" style="max-width: 20%"/>
             <q-time v-model="start_datetime" mask="YYYY-MM-DD HH:mm" color="purple" title="Time" now-btn style="width: 20%" format24h/> -->
@@ -140,14 +74,6 @@
               
             </template>
           </div>
-          <!-- <div class="q-gutter-md row">
-            <q-btn
-            label="Current time"
-            v-on:click="set_time = !set_time"
-            color="primary"
-            style="display: block;"
-            ></q-btn> 
-          </div> -->
           <br/>
           <br/>
 
@@ -169,12 +95,24 @@
                 Computing...
               </template>
             </q-btn>
+
+            <q-dialog v-model="calculation_alert">
+              <q-card>
+                <q-card-section>
+                  <div class="text-h6">Alert</div>
+                </q-card-section>
+        
+                <q-card-section class="q-pt-none">
+                  Choose all the data first! (track, weather, starting point and datetime)
+                </q-card-section>
+        
+                <q-card-actions align="right">
+                  <q-btn flat label="OK" color="primary" v-close-popup />
+                </q-card-actions>
+              </q-card>
+            </q-dialog>
+
             <br/>
-            <!-- <p>{{my_msg}}</p>
-            <p>calculating {{calculating}}. </p> 
-            <p>is_calculating {{is_calculating}}. </p>
-            <p>calculation_progress {{calculation_progress}}</p>
-            <p>{{index_out}}</p> -->
 
             <!-- https://youtu.be/dffZTCDpiRs?t=2609 -->
         </p>
@@ -183,45 +121,9 @@
       <div>
         <h1>How is it going</h1>
       </div>
-        <!-- <plotly :data="[{
-          type: 'scattermapbox',
-          text: [ 10, 5 ],
-          lon: [ -90.1744208, -90.9007405 ],
-          lat: [ 38.0032799, 38.0021822 ],
-          marker: { color: 'fuchsia', size: 4 }
-        }]" :layout="{
-          dragmode: 'zoom',
-          mapbox: { style: 'open-street-map', center: { lat: 38, lon: -90 }, zoom: 3 },
-          width: 400,
-          height: 300,
-          margin: {l: 0, r: 0, b: 0, t: 0, pad: 0}
-        }"></plotly> -->
-        <plotly :data="[{
-      x: [2, 3, 4, 5],
-      y: [16, 5, 11, 9],
-      mode: 'lines',
-      type: 'scatter'
-    }]" :layout="{
-      height: 250,
-      margin: {l: 0, r: 0, b: 0, t: 0, pad: 0}
-    }"></plotly>
-        <plotly :data="[{
-      x: ['giraffes', 'orangutans', 'monkeys'],
-      y: [20, 14, 23],
-      type: 'bar'
-    }]" :layout="{
-      height: 250,
-      margin: {l: 0, r: 0, b: 0, t: 0, pad: 0}
-    }"></plotly>
-        <plotly :data="[{
-      x: [2, 3, 4, 5],
-      y: [16, 5, 11, 9],
-      mode: 'lines',
-      type: 'scatter'
-    }]" :layout="{
-      height: 250,
-      margin: {l: 0, r: 0, b: 0, t: 0, pad: 0}
-    }"></plotly>
+        <plotly :data="track_altitude_traces" :layout="track_altitude_layout"></plotly>
+        <plotly :data="speeds_traces" :layout="speeds_layout"></plotly>
+        <plotly :data="energies_traces" :layout="energies_layout"></plotly>
     </div>
     <div class="st-col st-module col-sm">
       <div>
