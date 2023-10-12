@@ -10,22 +10,29 @@
         <h1>Inputs</h1>
       </div>
 
+      <!-- <h3>
+        Select track and weather data
+      </h3> -->
           <!-- <h3>Specify route and weather data</h3> -->
           <q-select v-model="selected_track" :options="track_files" label="Select track" emit-value/>
-          <q-select v-model="selected_weather" :options="weather_files" label="Select weather" />
+          <q-select v-model="selected_weather" :options="weather_files" label="Select weather" style="margin-top: 0px"/>
           <br/>
 
-          <plotly :data="track_traces" :layout="track_layout" style="max-width: inherit;"></plotly>
-
-          <!-- <h3>Select starting point</h3> -->
+          <h4>Select starting point</h4>
           <div class="q-pa-md">
             <q-badge color="secondary">
               Starting point # {{ start_index }}
             </q-badge>
             <q-slider v-model="start_index" :min="1" :max="max_track_index" label="true">slider text</q-slider>
           </div>
+          <div class="row">
+            <q-input label="Latitute" type="number" v-model.number="latitude_in" :disable="track_not_selected" style="width: 30%; margin-right: 5%;"></q-input>
+            <q-input label="Longitude" type="number" v-model.number="longitude_in" :disable="track_not_selected" style="width: 30%; margin-right: 5%;"></q-input>
+            <q-btn label="Find point" color="primary" v-on:click="selecting_location = !selecting_location"
+            style="font-size: 10;"></q-btn>
+          </div>
 
-          <h3>Select start datetime</h3>
+          <h3>Simulation parameters</h3>
           <div>
             <!-- <q-date v-model="start_datetime" mask="YYYY-MM-DD HH:mm" color="purple" title="Date" now-btn :dense="true" style="max-width: 20%"/>
             <q-time v-model="start_datetime" mask="YYYY-MM-DD HH:mm" color="purple" title="Time" now-btn style="width: 20%" format24h/> -->
@@ -74,6 +81,10 @@
               
             </template>
           </div>
+          <!-- <h3>Simulation parameters</h3> -->
+          <q-input label="Energy in system (W*h)" type="number" v-model.number="start_energy"></q-input>
+          <q-input label="Subtasks scaling" type="number" v-model.number="subtasks_scaling_coef"></q-input>
+          <q-input label="Input speeds scaling" type="number" v-model.number="speeds_scaling_coef"></q-input>
           <br/>
           <!-- <br/> -->
 
@@ -117,19 +128,43 @@
             <!-- https://youtu.be/dffZTCDpiRs?t=2609 -->
         </p>
     </div>
-    <div class="st-col st-module col-6">
+    <div class="st-col st-module col-4">
+      <div class="column">
+        <div class="st-col st-module col">
+          <div>
+            <h1>Map</h1>
+          </div>
+          <plotly :data="track_traces" :layout="track_layout" style="max-width: inherit;"></plotly>
+        </div>
+        <div class="st-col st-module col">
+          <div>
+            <h1>
+              Results
+            </h1>
+          </div>
+          <p>Travel time is </p>
+          <p>Projected finish time is </p>
+          <p>Average speed is </p>
+          <p>Maximum energy is </p>
+          <p>Minimum energy is </p>
+        </div>
+      </div>
+      
+      <!-- <plotly :data="track_traces" :layout="track_layout" style="max-width: inherit;"></plotly> -->
+    </div>
+    <div class="st-col st-module col">
       <div>
-        <h1>How is it going</h1>
+        <h1>Suggested strategy</h1>
       </div>
         <plotly :data="track_altitude_traces" :layout="track_altitude_layout"></plotly>
         <plotly :data="speeds_traces" :layout="speeds_layout"></plotly>
         <plotly :data="energies_traces" :layout="energies_layout"></plotly>
     </div>
-    <div class="st-col st-module col-sm">
+    <!-- <div class="st-col st-module col-sm">
       <div>
         <h1>Other content</h1>
       </div>
         <q-uploader label="Upload track data" accept=".csv" multiple="false" method="POST" url="http://localhost:9101/track" field-name="csv_file_track"></q-uploader>
         <q-uploader label="Upload weather data" accept=".json" multiple="false" method="POST" url="http://localhost:9101/weather" field-name="csv_file_weather"></q-uploader>
-    </div>
+    </div> -->
 </div>

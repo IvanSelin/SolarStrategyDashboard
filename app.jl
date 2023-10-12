@@ -39,11 +39,18 @@ end
     @in route_file = ""
     @in weather_file = ""
     @in start_index = 1
-    @in start_datetime = string(DateTime(2023,1,1,10,0,0))
+    # @in start_datetime = string(DateTime(2023,1,1,10,0,0))
+    @in start_datetime = "2023-01-01 10:00:00"
     @in calculating = false
     @in set_time = false
     @in selected_track = ""
     @in selected_weather = ""
+    @in latitude_in = 0.0
+    @in longitude_in = 0.0
+    @in selecting_location = false
+    @in start_energy = 5100.
+    @in subtasks_scaling_coef = 5
+    @in speeds_scaling_coef = 5
 
     @out msg = "The average is 0."
     @out calculation_progress = 0.
@@ -62,6 +69,7 @@ end
         marker_size=4
       )]
     @out calculation_alert = false
+    @out track_not_selected = true
 
     @out track_layout = PlotlyBase.Layout(
             dragmode="zoom",
@@ -168,9 +176,9 @@ end
         results = iterative_optimization(
             track_df,
             segments_df,
-            5,
-            5,
-            5100.,
+            subtasks_scaling_coef,
+            speeds_scaling_coef,
+            start_energy,
             DateTime(start_datetime, datetime_format)
         )
 
@@ -300,6 +308,8 @@ end
 
     @onchange start_index begin
         track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+        latitude_in = track_df.latitude[start_index]
+        longitude_in = track_df.longitude[start_index]
     end
 
     @onchange selected_weather begin
@@ -346,6 +356,13 @@ end
         # println(track_df)
         start_index = min(start_index, max_track_index)
         track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+        track_not_selected = false
+    end
+
+    @onchange selecting_location begin
+        euclidean_distance = sqrt.( (track_df.latitude .- latitude_in) .^ 2 .+ (track_df.longitude .- longitude_in) .^ 2 )
+        val, index = findmin(euclidean_distance)
+        start_index = index
     end
 
     route("/track", method = POST) do
