@@ -142,11 +142,16 @@
               Results
             </h1>
           </div>
-          <p>Travel time is {{travel_time}} seconds.</p>
-          <p>Projected finish time is {{finish_time}}</p>
-          <p>Average speed is {{average_speed}}</p>
-          <!-- <p>Maximum energy is {{max_energy}}</p> -->
-          <p>Minimum energy is {{min_energy}}</p>
+          <div v-if="results_ready">
+            <p>Travel time is {{travel_time}} seconds.</p>
+            <p>Projected finish time is {{finish_time}}</p>
+            <p>Average speed is {{average_speed}} km/h</p>
+            <!-- <p>Maximum energy is {{max_energy}}</p> -->
+            <p>Minimum energy is {{min_energy}} Wt*h</p>
+          </div>
+          <div v-if="!results_ready" style="height: 250px;">
+            <p>Start calculation to see the results</p>
+          </div>
         </div>
       </div>
       
@@ -156,9 +161,18 @@
       <div>
         <h1>Suggested strategy</h1>
       </div>
-        <plotly :data="track_altitude_traces" :layout="track_altitude_layout"></plotly>
-        <plotly :data="speeds_traces" :layout="speeds_layout"></plotly>
-        <plotly :data="energies_traces" :layout="energies_layout"></plotly>
+        <plotly v-if="!track_not_selected" :data="track_altitude_traces" :layout="track_altitude_layout"></plotly>
+        <div v-if="track_not_selected" style="height: 250px;">
+          <p>Select the track to see the track profile</p>
+        </div>
+        <plotly v-if="results_ready" :data="speeds_traces" :layout="speeds_layout"></plotly>
+        <div v-if="!results_ready" style="height: 250px;">
+          <p>Start calculation and wait until results are ready to see the speed graph</p>
+        </div>
+        <plotly v-if="results_ready" :data="energies_traces" :layout="energies_layout"></plotly>
+        <div v-if="!results_ready" style="height: 250px;">
+          <p>Start calculation and wait until results are ready to see the energy graph</p>
+        </div>
     </div>
     <!-- <div class="st-col st-module col-sm">
       <div>

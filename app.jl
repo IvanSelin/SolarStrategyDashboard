@@ -75,6 +75,7 @@ end
     @out average_speed = 0.
     @out max_energy = 0.
     @out min_energy = 0.
+    @out results_ready = false
 
     @out track_layout = PlotlyBase.Layout(
             dragmode="zoom",
@@ -90,12 +91,6 @@ end
             margin_b=0
     )
     @out track_altitude_traces = [
-        scatter(
-            x=[2,3,4,5],
-            y=[16,5,11,9],
-            mode="lines",
-            type="scatter"
-        )
     ]
     @out track_altitude_layout = PlotlyBase.Layout(
         height=250,
@@ -111,31 +106,11 @@ end
     )
 
     @out speeds_traces = [
-        bar(
-            x= ["giraffes", "orangutans", "monkeys"],
-            y=[20, 14, 23]
-        )
     ]
     @out speeds_layout = PlotlyBase.Layout(
-        height=250,
-        margin_l=0,
-        margin_r=0,
-        # margin_t=0,
-        margin_b=0,
-        margin_pad=0,
-        title_text="Speed (distance)",
-        xaxis_title_text="Distance (m)",
-        yaxis_title_text="Speed (km/h)",
-        showlegend=false
     )
 
     @out energies_traces = [
-        scatter(
-            x=[2,3,4,5],
-            y=[16,5,11,9],
-            mode="lines",
-            type="scatter"
-        )
     ]
     @out energies_layout = PlotlyBase.Layout(
         height=250,
@@ -196,14 +171,6 @@ end
         speeds = final_result.speeds
         energies = final_result.energies
 
-        # speeds_traces = [
-        #     bar(
-        #         x=get_mean_data(track_df.distance),
-        #         y=speeds,
-        #         width=segments_df.diff_distance
-        #     )
-        # ]
-
         speeds_traces = [
             scatter(
                 x=get_mean_data(optim_track_df.distance),
@@ -255,6 +222,7 @@ end
         average_speed = mean(final_result.speeds)
         min_energy = minimum(final_result.energies)
         is_calculating = false
+        results_ready = true
     end
 
     @onchange start_datetime begin
@@ -393,26 +361,7 @@ end
         println(selected_track)
         track_df, segments_df = get_track_and_segments(joinpath(FILE_PATH, TRACK_DIR, selected_track))
 
-        # track_altitude_traces = [
-        #     scatter(
-        #         x=track_df[1:start_index,:].distance,
-        #         y=track_df[1:start_index,:].altitude,
-        #         mode="lines",
-        #         type="scatter",
-        #         line_color="green",
-        #         name="passed"
-        #     ),
-        #     scatter(
-        #         x=track_df[start_index:end,:].distance,
-        #         y=track_df[start_index:end,:].altitude,
-        #         mode="lines",
-        #         type="scatter",
-        #         line_color="red",
-        #         name="prediction"
-        #     )
-        # ]
         max_track_index = size(segments_df,1)
-        # println(track_df)
         start_index = min(start_index, max_track_index)
         track_traces, track_layout, track_altitude_traces = get_map_traces(track_df, start_index, weather_density_df)
         track_not_selected = false
