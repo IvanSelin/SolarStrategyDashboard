@@ -70,6 +70,11 @@ end
       )]
     @out calculation_alert = false
     @out track_not_selected = true
+    @out travel_time = 1.
+    @out finish_time = DateTime(2023,1,1,0,0,0)
+    @out average_speed = 0.
+    @out max_energy = 0.
+    @out min_energy = 0.
 
     @out track_layout = PlotlyBase.Layout(
             dragmode="zoom",
@@ -101,7 +106,8 @@ end
         # margin_pad=0
         title_text="Track altitude (distance)",
         xaxis_title_text="Distance (m)",
-        yaxis_title_text="Altitude (m)"
+        yaxis_title_text="Altitude (m)",
+        showlegend=false
     )
 
     @out speeds_traces = [
@@ -119,7 +125,8 @@ end
         margin_pad=0,
         title_text="Speed (distance)",
         xaxis_title_text="Distance (m)",
-        yaxis_title_text="Speed (km/h)"
+        yaxis_title_text="Speed (km/h)",
+        showlegend=false
     )
 
     @out energies_traces = [
@@ -173,9 +180,12 @@ end
 
         @info "Starting calculation"
 
+        optim_track_df = track_df[start_index:end,:]
+        optim_segments_df = segments_df[start_index:end,:]
+
         results = iterative_optimization(
-            track_df,
-            segments_df,
+            optim_track_df,
+            optim_segments_df,
             subtasks_scaling_coef,
             speeds_scaling_coef,
             start_energy,
@@ -196,34 +206,54 @@ end
 
         speeds_traces = [
             scatter(
-                x=get_mean_data(track_df.distance),
+                x=get_mean_data(optim_track_df.distance),
                 y=speeds,
                 mode="lines",
                 type="scatter",
-            )
-        ]
-
-        red_y_data = fill(0., size(track_df.distance,1))
-
-        energies_traces = [
-            scatter(
-                x=track_df.distance,
-                y=energies,
-                mode="lines",
-                type="scatter",
-                line_width="2"
-            ),
-            scatter(
-                x=track_df.distance,
-                y=red_y_data,
-                mode="lines",
-                type="scatter",
-                line_width="4",
                 line_color="red"
             )
         ]
 
+        speeds_layout = PlotlyBase.Layout(
+            height=250,
+            margin_l=0,
+            margin_r=0,
+            # margin_t=0,
+            margin_b=0,
+            margin_pad=0,
+            title_text="Speed (distance)",
+            xaxis_title_text="Distance (m)",
+            yaxis_title_text="Speed (km/h)",
+            showlegend=false,
+            xaxis_range=[0, last(track_df.distance)]
+        )
+
+        blue_y_data = fill(0., size(track_df.distance,1))
+
+        energies_traces = [
+            scatter(
+                x=optim_track_df.distance,
+                y=energies,
+                mode="lines",
+                type="scatter",
+                line_width="2",
+                line_color="red"
+            ),
+            scatter(
+                x=track_df.distance,
+                y=blue_y_data,
+                mode="lines",
+                type="scatter",
+                line_width="4",
+                line_color="blue"
+            )
+        ]
+
         @info "Finishing calculation"
+        travel_time = last(final_result.seconds)
+        finish_time = last(final_result.times)
+        average_speed = mean(final_result.speeds)
+        min_energy = minimum(final_result.energies)
         is_calculating = false
     end
 
@@ -283,6 +313,25 @@ end
             opacity=0.5
         )
 
+        track_altitude_traces = [
+            scatter(
+                x=before_df.distance,
+                y=before_df.altitude,
+                mode="lines",
+                type="scatter",
+                line_color="green",
+                name="passed"
+            ),
+            scatter(
+                x=after_df.distance,
+                y=after_df.altitude,
+                mode="lines",
+                type="scatter",
+                line_color="red",
+                name="prediction"
+            )
+        ]
+
         traces = [trace_before, trace_after, weather_trace]
         # track_traces = [trace_before, trace_after]
         layout = PlotlyBase.Layout(
@@ -303,11 +352,11 @@ end
             legend_orientation="h"
         )
 
-        return traces, layout
+        return traces, layout, track_altitude_traces
     end
 
     @onchange start_index begin
-        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+        track_traces, track_layout, track_altitude_traces = get_map_traces(track_df, start_index, weather_density_df)
         latitude_in = track_df.latitude[start_index]
         longitude_in = track_df.longitude[start_index]
     end
@@ -336,7 +385,7 @@ end
         )
         segments_df.weather_coeff = weather_weights
 
-        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+        track_traces, track_layout, track_altitude_traces = get_map_traces(track_df, start_index, weather_density_df)
         
     end
 
@@ -344,18 +393,28 @@ end
         println(selected_track)
         track_df, segments_df = get_track_and_segments(joinpath(FILE_PATH, TRACK_DIR, selected_track))
 
-        track_altitude_traces = [
-            scatter(
-                x=track_df.distance,
-                y=track_df.altitude,
-                mode="lines",
-                type="scatter"
-            )
-        ]
+        # track_altitude_traces = [
+        #     scatter(
+        #         x=track_df[1:start_index,:].distance,
+        #         y=track_df[1:start_index,:].altitude,
+        #         mode="lines",
+        #         type="scatter",
+        #         line_color="green",
+        #         name="passed"
+        #     ),
+        #     scatter(
+        #         x=track_df[start_index:end,:].distance,
+        #         y=track_df[start_index:end,:].altitude,
+        #         mode="lines",
+        #         type="scatter",
+        #         line_color="red",
+        #         name="prediction"
+        #     )
+        # ]
         max_track_index = size(segments_df,1)
         # println(track_df)
         start_index = min(start_index, max_track_index)
-        track_traces, track_layout = get_map_traces(track_df, start_index, weather_density_df)
+        track_traces, track_layout, track_altitude_traces = get_map_traces(track_df, start_index, weather_density_df)
         track_not_selected = false
     end
 
