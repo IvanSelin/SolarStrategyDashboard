@@ -1,2 +1,2 @@
-include("C:\\Users\\user\\Dropbox\\Solar_my\\strategy\\solar_strategy\\src\\SolarStrategy.jl")
+include("your\\path\\to\\the\\calculation\\module\\SolarStrategy.jl")
 using .SolarStrategy

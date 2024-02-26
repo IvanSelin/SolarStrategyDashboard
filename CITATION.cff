@@ -1,0 +1,34 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: SPbPUStrat Dashboard
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Ivan
+    family-names: Selin
+    orcid: 'https://orcid.org/0000-0002-8805-5887'
+identifiers:
+  - type: doi
+    value: 10.18721/JCSTCS.16402
+repository-code: 'https://github.com/IvanSelin/solar_strategy'
+abstract: Energy management for solar car racing written in Julia
+license: MIT
+preferred-citation:
+  authors:
+    - family-names: "Selin"
+      given-names: "Ivan"
+      orcid: "https://orcid.org/0000-0002-8805-5887"
+  doi: "10.18721/JCSTCS.16402"
+  journal: "Computing,  Telecommunication and Control"
+  start: 18
+  end: 27
+  pages: 10
+  title: "New methods for efficient energy management of a solar vehicle on a fixed route"
+  type: article
+  volume: 16
+  issue: 4
+  year: 2023

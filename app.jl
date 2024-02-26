@@ -22,6 +22,8 @@ Genie.config.server_port = 9101
 const FILE_PATH = "upload"
 const TRACK_DIR = "track"
 const WEATHER_DIR = "weather"
+const MAPBOX_STYLE = "open-street-map"
+# const MAPBOX_STYLE = "stamen-terrain"
 mkpath(FILE_PATH)
 mkpath(joinpath(FILE_PATH, TRACK_DIR))
 mkpath(joinpath(FILE_PATH, WEATHER_DIR))
@@ -52,6 +54,25 @@ end
     @in subtasks_scaling_coef = 5
     @in speeds_scaling_coef = 5
 
+    solar_car = SolarCar(
+        390.0,
+        0.18,
+        1.0,
+        0.0023,
+        0.000041,
+        0.87,
+        40.0,
+        0.86,
+        0.228,
+        4.0
+    )
+
+    env = Environment(
+        9.8019,
+        1.18
+    )
+
+
     @out msg = "The average is 0."
     @out calculation_progress = 0.
     @out is_calculating = false
@@ -60,14 +81,7 @@ end
     @out max_track_index = 1
     @out track_files = readdir(joinpath(FILE_PATH, TRACK_DIR))
     @out weather_files = readdir(joinpath(FILE_PATH, WEATHER_DIR))
-    @out track_traces = [scatter(
-        type="scattermapbox",
-        text=[ 10, 5 ],
-        lon=[ -90.1744208, -90.9007405 ],
-        lat=[ 38.0032799, 38.0021822 ],
-        marker_color="fuchsia",
-        marker_size=4
-      )]
+    @out track_traces = []
     @out calculation_alert = false
     @out track_not_selected = true
     @out travel_time = 1.
@@ -79,7 +93,7 @@ end
 
     @out track_layout = PlotlyBase.Layout(
             dragmode="zoom",
-            mapbox_style="open-street-map",
+            mapbox_style=MAPBOX_STYLE,
             mapbox_center_lat=38,
             mapbox_center_lon=-90,
             mapbox_zoom=3,
@@ -164,6 +178,8 @@ end
             subtasks_scaling_coef,
             speeds_scaling_coef,
             start_energy,
+            solar_car,
+            env,
             DateTime(start_datetime, datetime_format)
         )
 
@@ -306,7 +322,7 @@ end
             geo_fitbounds="locations",
 			# autosize=true,
             dragmode="zoom",
-            mapbox_style="open-street-map",
+            mapbox_style=MAPBOX_STYLE,
             mapbox_center_lat=mean(track_data.latitude),
             mapbox_center_lon=mean(track_data.longitude),
             mapbox_zoom=3,
